@@ -1,1 +1,6 @@
-import mongoose from 
+export default function App(){
+    return(
+        <>
+        </>
+    )
+}
