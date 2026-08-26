@@ -3,9 +3,9 @@ import Link from '../models/Link.js';
 
 //createLink 
 
-const createLink = async (req, res) => {
+export const createLink = async (req, res) => {
     const { name, link } = req.body;
-    const user = req.user.user._id;
+    const user = req.user._id;
 
     try {
         const order = await Link.countDocuments({ user })
