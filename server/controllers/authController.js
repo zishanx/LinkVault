@@ -4,24 +4,46 @@ import User from '../models/User.js';
 
 export const register = async (req, res) => {
     const { name, username, email, password } = req.body;
-    const UserExists = await User.findOne({
-        email, username
-    });
+    const isEmail = await User.findOne({ email });
+    const isUsername = await User.findOne({ username });
 
-    if (UserExists) {
-        return res.status(400).json({ message: 'User already exists' });
-    } else {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await User.create({
-            name,
-            username,
-            email,
-            password: hashedPassword
-        });
-        res.status(201).json({ message: 'User created successfully', user });
+    if (isEmail) {
+        return res.status(400).json({ message: 'Email already exists' });
     }
+
+    if (isUsername) {
+        return res.status(400).json({ message: "Username already exists" })
+    }
+
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+        name,
+        username,
+        email,
+        password: hashedPassword
+    });
+    const { password: _, ...userWithoutPassword } = user.toObject()
+
+    res.status(201).json({ message: 'User created successfully', userWithoutPassword });
+
 }
 
-export const login = async (req,res) => {
-    
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+        return res.status(400).json({ message: "User not found" });
+    }
+
+    if (await bcrypt.compare(password, user.password)) {
+        const token = jwt.sign({ user_id: user.id }, process.env.JWTSECRET, { expiresIn: '7d' })
+        const { password: _, ...userWithoutPassword } = user.toObject()
+
+        res.status(200).json({ user: userWithoutPassword , token }, )
+    } else {
+        return res.status(300).json({ message: "Incorrect Password" })
+    }
+
 }
