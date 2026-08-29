@@ -43,7 +43,7 @@ export const login = async (req, res) => {
 
         res.status(200).json({ user: userWithoutPassword , token }, )
     } else {
-        return res.status(300).json({ message: "Incorrect Password" })
+        return res.status(401).json({ message: "Incorrect Password" })
     }
 
 }
