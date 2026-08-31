@@ -21,49 +21,71 @@ A subscription-gated link-in-bio + analytics tool (like Linktree, but with paid 
 2. **Link** — belongs to User, url, title, click count, order/position
 3. **Click** — tracks individual click events for analytics (belongs to Link)
 
-## Folder Structure (planned — fill in as built)
+## Folder Structure (as built so far)
 ```
 linkvault/
 ├── server/
 │   ├── models/
-│   │   └── User.js         ✅ done
+│   │   └── User.js              ✅ done
 │   ├── controllers/
-│   │   └── authController.js   🔲 in progress
+│   │   └── authController.js    ✅ done (register + login)
 │   ├── routes/
+│   │   └── authRoutes.js        🔲 not started (wire up register/login endpoints)
 │   ├── middleware/
-│   │   ├── auth.js         🔲 not started (protect middleware)
-│   │   └── clickTracker.js 🔲 not started (click-tracking middleware)
-│   └── server.js
+│   │   ├── protect.js           ✅ done
+│   │   └── clickTracker.js      🔲 not started (click-tracking middleware)
+│   └── server.js                🔲 not started
 └── client/
     └── (not started)
 ```
 
 ## Progress Log
 
-### ✅ Done
-- **User model** — built, revised twice:
-  - v1: basic fields (name, email, password, subscription as plain string, isAdmin)
-  - v2 (current/final): added `username` (unique, needed for public profile URLs), `subscription` restricted via Mongoose `enum: ["Free", "Premium"]`, `password` set to `select: false`, added `timestamps: true`, dropped `isAdmin` (not needed for LinkVault — no admin dashboard planned)
-  - Confirmed understanding of `select: false` + `.select('+password')` pattern for fetching password when needed
+### ✅ Done — Full Auth Layer (completed in one session, post-break re-entry)
+- **User model** (`User.js`) — final version:
+  - Fields: `name`, `username` (unique), `email` (unique), `password` (`select: false`), `subscription` (Mongoose `enum: ["Free", "Premium"]`, default `"Free"`), `timestamps: true`
+  - Deliberately dropped `isAdmin` (not needed — no admin dashboard planned for LinkVault)
+  - `razorpaySubscriptionId` / `subscriptionExpiry` — intentionally deferred until Razorpay Subscriptions is learned
 
-### 🔲 In Progress
-- **authController.js** — about to write `register` function (pattern: same as Wanderly's auth controller, using bcrypt at route-level for now — NOT `pre('save')` hook yet)
+- **`authController.js` — `register`**:
+  - Checks email AND username separately for duplicates (two `findOne` calls, not one combined query)
+  - Hashes password via `bcrypt.hash()` at route-level (deliberate choice — `pre('save')` hook to be studied and added later as an explicit upgrade)
+  - Strips password from response using `user.toObject()` + destructuring (`const { password: _, ...userWithoutPassword }`)
+
+- **`authController.js` — `login`**:
+  - Fetches user with `.select('+password')` to bypass schema default
+  - Uses `await bcrypt.compare()` (caught and fixed a missing-await bug that would've silently broken wrong-password detection)
+  - Signs JWT with `{ user_id: user.id }`, 7-day expiry
+  - Returns `{ user: userWithoutPassword, token }`
+  - Correct status codes: 401 for user-not-found and wrong-password (fixed from an initial `300` typo)
+
+- **`protect.js` middleware**:
+  - Extracts token from `Authorization` header, verifies via `jwt.verify()`
+  - **Fetches full user from DB** (`User.findById(decoded.user_id)`) rather than just trusting the decoded JWT payload — deliberate choice because LinkVault gates features by `subscription` tier across many routes, so `req.user.subscription` needs to be available downstream everywhere
+  - Handles edge case: valid/unexpired token but user was deleted afterward → explicit `401` check on `!req.user`, not left to crash downstream
+
+- **Conceptual understanding confirmed via quiz** (6/6 topics covered): `select: false` mechanics, why `.toObject()` is needed before destructuring, rest-operator behavior, why `await` matters on `bcrypt.compare()`, JWT-payload-vs-full-user tradeoff, and the deleted-user-valid-token edge case. Also walked through full request lifecycle: frontend form → POST body → backend verifies → JWT returned → stored via Context → attached as `Authorization: Bearer <token>` header via Axios interceptor on future requests → `protect` middleware validates → route handler runs.
+
+### 🔲 Immediate Next Steps
+- Wire up `authRoutes.js` (POST `/register`, POST `/login`) and `server.js` entry point
+- **Link model** — next planned step (fields likely: `user` ref, `url`, `title`, `clickCount`, `order`)
+- Frontend `AuthContext` + Axios instance (same pattern as Wanderly) — store token, attach via interceptor
 
 ### 🔲 Not Started
-- `login` function
-- JWT generation + auth middleware (`protect`)
-- Link model
 - Click model
 - Click-tracking middleware
 - Razorpay Subscriptions integration (webhooks, subscription status sync)
 - Frontend (React + Tailwind) — dashboard, public profile page, link management UI
 - Custom themes feature
+- Revisit: refactor bcrypt hashing from route-level → `pre('save')` Mongoose hook (deliberately deferred, not forgotten)
 
 ## Learning Notes / Decisions Made
 - **bcrypt hashing approach:** Starting with route-level `bcrypt.hash()` (same as Wanderly) to keep building on known patterns. Plan: revisit and refactor to `pre('save')` Mongoose hook once studied — this is a deliberate "build it the way I know, then upgrade" approach, not a gap.
 - Wanderly is being used as the reference/revision codebase throughout — comparing old patterns to LinkVault's needs rather than starting cold.
 
 ## Reminders for Cosmo (Claude)
-- Zizzy is re-entering after a 2-month break (personal + mental pressure reasons) — stuff feels "forgotten" but comes back fast once he starts reading/writing code again. Don't over-reassure, just keep momentum.
-- Socratic teaching style: ask him to recall/attempt first, confirm or correct after — don't just hand over code.
-- He's ahead of where he thinks he is — catch and note when he adds something correct without being prompted (he did this twice already: `username` field, `select: false`).
+- Zizzy calls Claude "Cosmo" in this project.
+- Zizzy re-entered after a 2-month break (personal + mental pressure reasons). First session back went well — full auth layer built correctly with minimal hand-holding. Rust fear was real but unfounded; don't over-reassure, just keep momentum.
+- Socratic teaching style: ask him to recall/attempt first, confirm or correct after — don't just hand over code. This is working well, keep doing it.
+- He catches his own bugs when prompted with the right question rather than told the answer outright (missing `await` on bcrypt.compare, `toObject` mechanics, etc.) — keep using guided questions over direct fixes.
+- He's ahead of where he thinks he is — he's added correct things unprompted multiple times (`username` field, `select: false`, separate email/username duplicate checks). Keep noting this when it happens.
