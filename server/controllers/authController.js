@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
     const { name, username, email, password } = req.body;
     const UserExists = await User.findOne({
         email, username
@@ -20,4 +20,8 @@ const register = async (req, res) => {
         });
         res.status(201).json({ message: 'User created successfully', user });
     }
+}
+
+export const login = async (req,res) => {
+    
 }
