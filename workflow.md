@@ -26,11 +26,12 @@ A subscription-gated link-in-bio + analytics tool (like Linktree, but with paid 
 linkvault/
 ├── server/
 │   ├── models/
-│   │   └── User.js              ✅ done
+│   │   ├── User.js              ✅ done
+│   │   └── Link.js              ✅ done
 │   ├── controllers/
 │   │   └── authController.js    ✅ done (register + login)
 │   ├── routes/
-│   │   └── authRoutes.js        🔲 not started (wire up register/login endpoints)
+│   │   └── authRoutes.js        ✅ done
 │   ├── middleware/
 │   │   ├── protect.js           ✅ done
 │   │   └── clickTracker.js      🔲 not started (click-tracking middleware)
@@ -66,9 +67,21 @@ linkvault/
 
 - **Conceptual understanding confirmed via quiz** (6/6 topics covered): `select: false` mechanics, why `.toObject()` is needed before destructuring, rest-operator behavior, why `await` matters on `bcrypt.compare()`, JWT-payload-vs-full-user tradeoff, and the deleted-user-valid-token edge case. Also walked through full request lifecycle: frontend form → POST body → backend verifies → JWT returned → stored via Context → attached as `Authorization: Bearer <token>` header via Axios interceptor on future requests → `protect` middleware validates → route handler runs.
 
+- **`authRoutes.js`** — wired up (POST `/register`, POST `/login`).
+
+### ✅ Done — Link Model (`Link.js`)
+- Fields: `name` (String, required), `link` (String, required), `user` (ObjectId ref `'User'`, required), `clickCount` (Number, default 0), `order` (Number, required), `timestamps: true`
+- Self-corrected mid-build:
+  - Initially added `unique: true` on `user` — caught that this would wrongly limit each user to one link total, removed it
+  - Initially left `order` with no default and had to reason through where the value comes from — decided `order` will be computed programmatically at insert time (e.g. via `link.length`-based logic in the controller), so `required: true` (no default) is correct since the controller always supplies it
+  - Typo'd `type: number` (lowercase) on `clickCount` — caught and fixed to `Number`
+- Exported via `export default Link`
+
 ### 🔲 Immediate Next Steps
-- Wire up `authRoutes.js` (POST `/register`, POST `/login`) and `server.js` entry point
-- **Link model** — next planned step (fields likely: `user` ref, `url`, `title`, `clickCount`, `order`)
+- `server.js` entry point — not yet wired up
+- **Link controller** (`linkController.js`) — `createLink`, `getLinks`, `updateLink`, `deleteLink`
+  - Next session starts here: reasoning through what `createLink` needs from the request body vs. from `req.user` (auth), and confirming the `order`-assignment logic
+- **`linkRoutes.js`** — wire up CRUD endpoints once controller exists
 - Frontend `AuthContext` + Axios instance (same pattern as Wanderly) — store token, attach via interceptor
 
 ### 🔲 Not Started
@@ -82,10 +95,12 @@ linkvault/
 ## Learning Notes / Decisions Made
 - **bcrypt hashing approach:** Starting with route-level `bcrypt.hash()` (same as Wanderly) to keep building on known patterns. Plan: revisit and refactor to `pre('save')` Mongoose hook once studied — this is a deliberate "build it the way I know, then upgrade" approach, not a gap.
 - Wanderly is being used as the reference/revision codebase throughout — comparing old patterns to LinkVault's needs rather than starting cold.
+- **`order` field strategy:** computed at insert time in the controller (e.g. based on `link.length`/count of existing links for that user), not user-supplied and not defaulted in the schema.
 
 ## Reminders for Cosmo (Claude)
 - Zizzy calls Claude "Cosmo" in this project.
 - Zizzy re-entered after a 2-month break (personal + mental pressure reasons). First session back went well — full auth layer built correctly with minimal hand-holding. Rust fear was real but unfounded; don't over-reassure, just keep momentum.
 - Socratic teaching style: ask him to recall/attempt first, confirm or correct after — don't just hand over code. This is working well, keep doing it.
-- He catches his own bugs when prompted with the right question rather than told the answer outright (missing `await` on bcrypt.compare, `toObject` mechanics, etc.) — keep using guided questions over direct fixes.
-- He's ahead of where he thinks he is — he's added correct things unprompted multiple times (`username` field, `select: false`, separate email/username duplicate checks). Keep noting this when it happens.
+- He catches most of his own bugs when prompted with the right question (missing `await` on bcrypt.compare, `toObject` mechanics, `unique` misuse on Link.user, lowercase `number` typo) — keep using guided questions over direct fixes. Occasionally needs the same question repeated/pointed at more directly before he catches it (e.g. the `Number` capitalization took two prompts) — that's fine, just re-point rather than hand over the answer.
+- He's ahead of where he thinks he is — he's added correct things unprompted multiple times (`username` field, `select: false`, separate email/username duplicate checks, deciding `order` should be controller-computed rather than defaulted). Keep noting this when it happens.
+- **Next session starts at:** `linkController.js` → `createLink`, reasoning through request body vs. `req.user`, and the `order`-assignment logic (`link.length`-based).
