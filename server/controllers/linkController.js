@@ -32,11 +32,21 @@ export const getLinks = async (req, res) => {
 
         const linkList = await Link.find({ user: req.user._id }).sort({ order: 1 })  // We are using .sort here which is a mongoose method to sort things up it takes the field you want to sort it as and value 1 and -1 for ascending and descending.
 
-        if (linkList.length === 0 ) {
+        if (linkList.length === 0) {
             return res.status(404).json({ message: "No Links found" })
         }
 
         res.status(200).json(linkList)
+
+    } catch (error) {
+        res.status(400).json({ message: error.message })
+    }
+}
+
+export const deleteLink = async (req, res) => {
+    try {
+
+        
 
     } catch (error) {
         res.status(400).json({ message: error.message })
