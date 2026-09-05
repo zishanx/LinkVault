@@ -79,8 +79,17 @@ export const updateLink = async (req, res) => {
 
 export const deleteLink = async (req, res) => {
     try {
+        const user = req.user._id;
+        const id = req.params.id;
 
+        const filter = { _id: id, user }
+        const deletedLink = await Link.findOneAndDelete( filter )
 
+        if(deletedLink){
+            res.status(200).json({message:"Link Deleted successfully"})
+        }else {
+            res.status(404).json({message:"No Link found."})
+        }
 
     } catch (error) {
         res.status(400).json({ message: error.message })
