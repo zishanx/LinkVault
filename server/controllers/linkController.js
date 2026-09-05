@@ -33,7 +33,7 @@ export const getLinks = async (req, res) => {
         const linkList = await Link.find({ user: req.user._id }).sort({ order: 1 })  // We are using .sort here which is a mongoose method to sort things up it takes the field you want to sort it as and value 1 and -1 for ascending and descending.
 
         if (linkList.length === 0) {
-            return res.status(404).json({ message: "No Links found" })
+            return res.status(200).json({ message: "No Links found" })
         }
 
         res.status(200).json(linkList)
@@ -83,12 +83,12 @@ export const deleteLink = async (req, res) => {
         const id = req.params.id;
 
         const filter = { _id: id, user }
-        const deletedLink = await Link.findOneAndDelete( filter )
+        const deletedLink = await Link.findOneAndDelete(filter)
 
-        if(deletedLink){
-            res.status(200).json({message:"Link Deleted successfully"})
-        }else {
-            res.status(404).json({message:"No Link found."})
+        if (deletedLink) {
+            res.status(200).json({ message: "Link Deleted successfully" })
+        } else {
+            res.status(404).json({ message: "No Link found." })
         }
 
     } catch (error) {
