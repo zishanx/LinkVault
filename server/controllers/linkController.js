@@ -43,10 +43,25 @@ export const getLinks = async (req, res) => {
     }
 }
 
+
+//Update Link 
+
+
+export const updateLink = async (req, res) => {
+
+    try {
+
+    } catch (err) {
+        res.status(400).json({ message: err.message })
+    }
+}
+
+// Delete Link
+
 export const deleteLink = async (req, res) => {
     try {
 
-        
+
 
     } catch (error) {
         res.status(400).json({ message: error.message })
