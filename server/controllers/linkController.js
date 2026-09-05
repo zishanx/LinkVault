@@ -50,6 +50,25 @@ export const getLinks = async (req, res) => {
 export const updateLink = async (req, res) => {
 
     try {
+        const { name, link } = req.body
+        const user = req.user._id
+        const id = req.params.id
+
+        const fetchedLink = await Link.findOne({ _id: id, user })
+
+        if (!fetchedLink) {
+            return res.status(404).json({ message: "No Link found." })
+        }
+
+        fetchedLink.name = name
+        if (fetchedLink.link !== link) {
+            fetchedLink.clickCount = 0
+        }
+        fetchedLink.link = link
+
+        await fetchedLink.save()
+
+        res.status(200).json({ message: "Link updated", fetchedLink })
 
     } catch (err) {
         res.status(400).json({ message: err.message })
