@@ -30,13 +30,13 @@ export const getLinks = async (req, res) => {
     try {
 
 
-        const linkList = await Link.find({ user: req.user._id }).sort({ order: 1 })  // We are using .sort here which is a mongoose method to sort things up it takes the field you want to sort it as and value 1 and -1 for ascending and descending.
+        const links = await Link.find({ user: req.user._id }).sort({ order: 1 })  // We are using .sort here which is a mongoose method to sort things up it takes the field you want to sort it as and value 1 and -1 for ascending and descending.
 
-        if (linkList.length === 0) {
+        if (links.length === 0) {
             return res.status(200).json({ message: "No Links found" })
         }
 
-        res.status(200).json(linkList)
+        res.status(200).json({links})
 
     } catch (error) {
         res.status(400).json({ message: error.message })
