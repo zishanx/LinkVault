@@ -36,7 +36,7 @@ export const getLinks = async (req, res) => {
             return res.status(200).json({ message: "No Links found" })
         }
 
-        res.status(200).json({links})
+        res.status(200).json({ links })
 
     } catch (error) {
         res.status(400).json({ message: error.message })
@@ -59,12 +59,16 @@ export const updateLink = async (req, res) => {
         if (!fetchedLink) {
             return res.status(404).json({ message: "No Link found." })
         }
-
-        fetchedLink.name = name
-        if (fetchedLink.link !== link) {
-            fetchedLink.clickCount = 0
+        if (name) {
+            fetchedLink.name = name
         }
-        fetchedLink.link = link
+
+        if (link) {
+            if (fetchedLink.link !== link) {
+                fetchedLink.clickCount = 0
+            }
+            fetchedLink.link = link
+        }
 
         await fetchedLink.save()
 
