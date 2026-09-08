@@ -29,10 +29,10 @@ linkvault/
 │   │   ├── User.js              ✅ done
 │   │   └── Link.js              ✅ done
 │   ├── controllers/
-│   │   ├── authController.js    ✅ done (register + login) — verify/me route NOT yet added
+│   │   ├── authController.js    ✅ done (register + login + verifyAuth)
 │   │   └── linkController.js    ✅ done + runtime-tested (createLink, getLinks, updateLink, deleteLink)
 │   ├── routes/
-│   │   ├── authRoutes.js        ✅ done — needs new verify/me route added next
+│   │   ├── authRoutes.js        ✅ done — register, login, GET /verify (behind protect) all wired
 │   │   └── linkRoutes.js        ✅ done — full REST CRUD wired + verified end-to-end
 │   ├── middleware/
 │   │   ├── protect.js           ✅ done, confirmed working via Postman
@@ -45,21 +45,38 @@ linkvault/
 ## Progress Log
 
 ### ✅ Done — Full Auth Layer
-(unchanged — User model, register/login controllers, protect middleware, authRoutes, server.js.)
+User model, register/login controllers, protect middleware, authRoutes, server.js.
 
 ### ✅ Done — Link Model (`Link.js`)
-(unchanged — name, link, user ref, clickCount default 0, order required, timestamps.)
+name, link, user ref, clickCount default 0, order required, timestamps.
 
 ### ✅ Done — Full Link CRUD Layer (`linkController.js`)
-All four routes now **runtime-tested end-to-end via Postman** this session (see below).
+All four routes runtime-tested end-to-end via Postman (createLink, getLinks, updateLink, deleteLink). No known open bugs. Treat as solid, tested ground — no need to re-verify unless something changes in that code.
 
-**`createLink`** — Free-tier gating (`subscription === "Free" && order >= 5` → 403), `order` computed via `countDocuments`, returns `201`. Confirmed working — created 2 real links during testing.
+### ✅ Done — Auth Verification Route (`verifyAuth`) — built this session
 
-**`getLinks`** — `Link.find({ user: req.user._id }).sort({ order: 1 })`, returns `200`. Response shape iterated on this session: started as `{ linkList: [...] }` → briefly a raw array → **settled on `{ links: [...] }`** as the final convention, reasoning through why list endpoints should return a named key inside an object rather than a bare array (room to add metadata like `totalCount`/`hasMore` later without breaking existing frontend consumers).
+**Motive (talked through Socratically this session):** the frontend will store the JWT in `localStorage`. On app load/refresh, the app has *only* a raw token string with zero guarantees — no proof it's still valid, no user info attached. `verifyAuth` is a **status check**, not a login: it sends the stored token to a protected route, and the success/failure of that response tells the frontend whether to treat the user as logged in.
 
-**`updateLink`** — Bug found and fixed this session: the controller was unconditionally doing `fetchedLink.link = link` (and originally `fetchedLink.name = name`) even when that field wasn't sent in the request body, causing Mongoose validation to fail with "Path `link` is required" on partial updates (e.g. updating only `name`). Fixed by wrapping each field in its own `if (field)` guard, with the `clickCount` reset comparison living **inside** the `if (link)` block (compares incoming `link` to `fetchedLink.link` before overwrite). Briefly discussed `||` fallback syntax (`fetchedLink.name = name || fetchedLink.name`) as an alternative one-liner — noted as equally valid for simple cases, but `if` blocks preferred here since the `link` field also needs the clickCount side-effect attached to the same condition. Final logic confirmed working via two Postman test cases: (1) name-only update leaves `link`/`clickCount` untouched, (2) link-only update resets `clickCount` to 0.
-
-**`deleteLink`** — confirmed working via Postman (verified link actually gone via follow-up `getLinks` call).
+- Route: `GET /api/auth/verify`, behind `protect`.
+- Correctly reasoned that `protect` already does the real gatekeeping (decode token → find user by id → attach full doc to `req.user`, returning `401` itself on invalid/missing/expired token) — so `verifyAuth` never needs to re-check "is this user logged in," it can just trust `req.user` exists by the time it runs. Caught and removed a redundant `if/else` re-checking that on first pass.
+- Correctly reasoned that `password` is already excluded from `req.user` automatically because the User schema field uses `select: false` — no manual stripping needed in the controller. (Also correctly recalled that `login` has to explicitly override this with `.select('+password')` to compare credentials.)
+- Final controller:
+```js
+export const verifyAuth = async (req, res) => {
+    try {
+        const { name, username, subscription } = req.user;
+        res.status(200).json({ message: "The user is logged in", name, username, subscription })
+    } catch (error) {
+        res.status(400).json({ message: error.message })
+    }
+}
+```
+- Noted (not fixed, no rush): `async` isn't doing anything here since there's no `await` in the body — harmless either way, purely a style choice.
+- Route wired into `authRoutes.js`:
+```js
+router.get('/verify', protect, verifyAuth)
+```
+- **Not yet done:** Postman-testing this route (valid token → 200 with correct fields; no token / garbage token → 401 from `protect` itself, confirming `verifyAuth` never even runs in that case).
 
 ### ✅ Done — `linkRoutes.js`
 Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. Confirmed working.
@@ -67,22 +84,14 @@ Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. C
 ### ✅ Done — `server.js`
 (unchanged)
 
-### ✅ Done — First End-to-End Test (Postman)
-Full flow tested this session: register → login → grab token → create/get/update/delete links, all via Postman (not Thunder Client as originally planned — switched tools, same concept).
-
-Bugs hit and resolved along the way (good debugging reps, not code issues):
-- Header value pasted with stray quotes (`'Bearer ...'`) — caused "invalid token"; fixed by removing quotes, since Postman headers are raw strings, not JSON.
-- URL param mistake — literally kept the `:` from the `/:id` route placeholder in the actual request URL (`/links/:abc123` instead of `/links/abc123`) — caused a Mongoose ObjectId cast error.
-- Response body vs. Postman's "Test Results" tab confusion (briefly thought `getLinks` was returning nothing when it wasn't) — resolved, just a UI mixup.
-- The `updateLink` partial-update bug described above.
-
-**Outcome: all four link routes are confirmed working end-to-end. No known open bugs in the link CRUD layer.**
+### ✅ Done — First End-to-End Test (Postman) — link CRUD layer
+Full flow tested: register → login → grab token → create/get/update/delete links, all via Postman. All four link routes confirmed working end-to-end. No known open bugs.
 
 ### 🔲 Immediate Next Steps (session resumes here)
-- **Build a dedicated auth verification route** — new discussion started this session, not yet built. Decision made: this should live in `authController`/`authRoutes`, NOT be piggybacked onto `linkController` (reasoning: separation of concerns — link routes shouldn't be responsible for identity checks). Proposed shape: something like `GET /api/auth/me` or `/api/auth/verify`, behind `protect`, returning info about the currently authenticated user (exact response payload — TBD, was mid-discussion when session ended, guided toward thinking about what `protect` already attaches to `req` by the time the controller runs).
-- **Start frontend** — plan set this session: React Router, `AuthContext`, Login/Register pages, Home page.
-  - Flow agreed: on app load, check `localStorage` for a token. Talked through *why* merely having a token isn't enough (could be expired/invalid) — landed on the idea of verifying the token against the backend on mount (an "auth check on load" pattern), rather than just trusting its presence. This is the direct motivation for the new auth verify route above.
-  - Still open/undiscussed: exact shape of `AuthContext` (what state/functions it exposes), and where the user lands post-login (dashboard vs. public profile) — flagged as still to decide, not yet answered.
+- **Postman-test `/api/auth/verify`** — hit it with a valid token (expect 200 + name/username/subscription), then with no token and a garbage/expired token (expect 401 from `protect`, confirming `verifyAuth` is never reached).
+- **Start frontend** — React Router setup, `AuthContext`, Login/Register pages, Home page.
+  - Flow agreed: on app load, check `localStorage` for a token, then call `/api/auth/verify` to confirm it's actually still valid (rather than just trusting its presence) — this is exactly what the new route is for.
+  - Still open/undiscussed: exact shape of `AuthContext` (what state/functions it exposes), and where the user lands post-login (dashboard vs. public profile) — flagged as still to decide.
 
 ### 🔲 Not Started
 - Click model
@@ -98,15 +107,18 @@ Bugs hit and resolved along the way (good debugging reps, not code issues):
 - Wanderly is the reference/revision codebase throughout.
 - **`order` field strategy:** computed at insert time via `Link.countDocuments({ user })`, not user-supplied, not defaulted in schema.
 - **Subscription gating:** backend is the source of truth for the 5-link free limit.
-- **Status code philosophy:** internalized via cheat sheet in a prior session — 2xx/4xx/5xx breakdown, applied consistently across all four link routes this session with no confusion.
+- **Status code philosophy:** internalized via cheat sheet in a prior session — applied consistently across all routes with no confusion.
 - **Ownership-check pattern:** filter by `{ _id: id, user: req.user._id }` directly in the query, return `404` (not `403`) on mismatch to avoid leaking existence of a resource to an attacker.
-- **List endpoint response shape (new this session):** always wrap arrays in a named key, e.g. `{ links: [...] }`, not a bare array — leaves room to add metadata (counts, pagination) later without breaking existing frontend code that reads `response.data.links`.
-- **Partial update pattern (new this session):** when a PATCH/PUT-style controller accepts optional fields, guard each field assignment with `if (field) {...}` (or `field || existingValue`) rather than unconditionally overwriting — otherwise omitted fields get set to `undefined` and can fail schema validation on required fields.
-- **Auth verification on app load (new this session, not yet built):** a token's mere presence in localStorage doesn't prove it's valid (could be expired). Correct pattern is to send the stored token to a protected backend route on app mount and use the success/failure of that response to decide auth state — motivated building a dedicated `/api/auth/verify`-style route rather than reusing `linkController`.
+- **List endpoint response shape:** always wrap arrays in a named key, e.g. `{ links: [...] }`, not a bare array — leaves room to add metadata (counts, pagination) later.
+- **Partial update pattern:** guard each optional field assignment with `if (field) {...}` rather than unconditionally overwriting, to avoid `undefined` overwrites failing schema validation.
+- **Auth verification on app load:** a token's mere presence in `localStorage` doesn't prove it's valid. Correct pattern is to send it to a protected backend route on app mount and use that response's success/failure to decide auth state.
+- **Middleware trust boundary (new this session):** once a request passes through `protect`, downstream controllers can trust `req.user` is a valid, existing user — no need to re-check "is logged in" logic inside the controller itself. Re-checking it is dead code and can even produce a misleading status code if it were ever wrong.
+- **Schema-level field exclusion (new this session):** `select: false` on a schema field (used on `password`) means it's excluded from all queries by default, including ones inside middleware like `protect` — no manual `delete user.password` or destructuring-to-omit needed downstream. To get it back when actually needed (e.g. comparing during login), you must explicitly `.select('+password')` on that specific query.
 
 ## Reminders for Claude
 - Socratic teaching style continues to work very well — he self-corrects almost everything when pointed at the right question. Keep doing this, don't shortcut to giving code.
-- Recurring pattern to watch: over-engineering a condition on first pass, or reaching for a heavier tool than needed (e.g. suggested `switch case` for what was really just a two-way `if`/`||` choice this session). When this happens, ask him to consider whether a simpler existing tool fits before introducing a new construct.
-- He debugs well independently when given the actual error message and a pointed question rather than the fix — this session he correctly diagnosed a stray-colon URL bug, a quoted-header-value bug, and the partial-update `undefined`-overwrite bug all from being walked toward the right question.
-- **Full link CRUD layer (create/get/update/delete) is now runtime-verified end-to-end via Postman. Treat this as solid, tested ground going forward — no need to re-verify unless something changes in that code.**
-- **Next session starts at:** deciding the payload/response shape for the new auth verification route (`/api/auth/verify` or `/api/auth/me`), building it in `authController`/`authRoutes`, then moving into frontend scaffolding (React Router setup, `AuthContext`, Login/Register pages, Home page) with the on-load token verification flow wired in.
+- Recurring pattern to watch: over-engineering a condition on first pass (this session: added a redundant `if/else` re-checking auth status that `protect` already guarantees). When this happens, ask him to consider whether the earlier layer (middleware) already handles it before adding new logic.
+- He debugs and reasons well independently when given a pointed question rather than the fix — this session he correctly reasoned through the trust boundary after `protect`, and correctly recalled the `select: false` schema detail from memory without being told.
+- **Full link CRUD layer is runtime-verified end-to-end via Postman. Treat as solid, tested ground going forward.**
+- **Auth verify route (`/api/auth/verify`) is built and wired but NOT YET Postman-tested — this is the very first thing to do next session, before moving into frontend.**
+- **Next session starts at:** Postman-testing `/api/auth/verify` (valid token, no token, bad token), then moving into frontend scaffolding (React Router setup, `AuthContext`, Login/Register pages, Home page) with the on-load token verification flow wired in.
