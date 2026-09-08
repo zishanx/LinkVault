@@ -41,7 +41,7 @@ export const login = async (req, res) => {
         const token = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
         const { password: _, ...userWithoutPassword } = user.toObject()
 
-        res.status(200).json({ user: userWithoutPassword , token }, )
+        res.status(200).json({ user: userWithoutPassword, token },)
     } else {
         return res.status(401).json({ message: "Incorrect Password" })
     }
@@ -51,6 +51,14 @@ export const login = async (req, res) => {
 
 //verify
 
-export const verify = async(req,res) => {
-    
+export const verifyAuth =  (req, res) => {
+    try {
+        const { name, username, subscription } = req.user;
+
+        res.status(200).json({ message: "The user is logged in ", name, username, subscription })
+
+
+    } catch (error) {
+        res.status(400).json({ message: error.message })
+    }
 }
