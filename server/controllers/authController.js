@@ -47,3 +47,10 @@ export const login = async (req, res) => {
     }
 
 }
+
+
+//verify
+
+export const verify = async(req,res) => {
+    
+}
