@@ -11,11 +11,18 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
+
+        if(!token) {
+            setIsLoading(false);
+            return
+        }
+
         const verify = async () => {
             const res = await fetch('', {
                 method: "GET",
-                headers: { "Authorization": token, "Content-type": "application/json" },
+                headers: { "Authorization": `Bearer ${token}`, "Content-type": "application/json" },
             })
+
         }
 
         verify()
