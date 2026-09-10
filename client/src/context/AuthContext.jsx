@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
 
-        if(!token) {
+        if (!token) {
             setIsLoading(false);
             return
         }
@@ -22,6 +22,17 @@ export const AuthProvider = ({ children }) => {
                 method: "GET",
                 headers: { "Authorization": `Bearer ${token}`, "Content-type": "application/json" },
             })
+
+
+
+            if (res.ok === true) {
+                const data = await res.json()
+
+                setUser(data)
+                setIsLoading(false)
+            } else {
+                setIsLoading(false)
+            }
 
         }
 
