@@ -1,68 +1,70 @@
-import { useEffect } from "react";
-import { createContext, useContext, useState } from "react";
+// Umm okie so we are creating the AuthContext here . The first thing we are going to do is import the stuffs that we need 
 
-// creating the context ("the box");
+import { useState, useContext, createContext, useEffect } from "react";
+
+// We will now create the context.
 
 const AuthContext = createContext()
 
+// We will create everything that we need.
+
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null)
+
+    // using useState to get hold of the data that we need and export them in the value . 
+
     const [token, setToken] = useState(localStorage.getItem('token') || null)
+    const [user, setUser] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
 
+    useEffect(() => {
         if (!token) {
-            setIsLoading(false);
+            setIsLoading(false)
             return
         }
 
         const verify = async () => {
+
             const res = await fetch('', {
                 method: "GET",
-                headers: { "Authorization": `Bearer ${token}`, "Content-type": "application/json" },
+                headers: { "authorization": `Bearer ${token}`, 'Content-type': "application/json" }
             })
-
-
 
             if (res.ok === true) {
                 const data = await res.json()
-
-                setUser(data)
                 setIsLoading(false)
+                setUser(data)
             } else {
                 setIsLoading(false)
             }
-
         }
 
         verify()
+
     }, [])
 
-
-    const login = (newToken, userData) => {
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
-        localStorage.setItem('user', JSON.stringify(userData))
+    const login = (token, userData) => {
+        setToken(token)
+        localStorage.setItem('token', token)
         setUser(userData)
+        localStorage.setItem('user', JSON.stringify(userData))
     }
-
 
     const logout = () => {
+        setToken(null)
+        setUser(null)
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        setUser(null)
-        setToken(null)
     }
 
-    const value = { user, token, isLoading, login, logout };
+    const value = { token, user, isLoading, login, logout }
 
     return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
     )
 }
 
 
-export const useAuth = () => useContext(AuthContext)
+//Creating a custom hook so that we can export and use it outside.
+
+export const useAuth = () => useContext(AuthContext) 
