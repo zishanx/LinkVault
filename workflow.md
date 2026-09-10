@@ -32,19 +32,22 @@ linkvault/
 │   │   ├── authController.js    ✅ done (register + login + verifyAuth)
 │   │   └── linkController.js    ✅ done + runtime-tested (createLink, getLinks, updateLink, deleteLink)
 │   ├── routes/
-│   │   ├── authRoutes.js        ✅ done — register, login, GET /verify (behind protect) all wired
+│   │   ├── authRoutes.js        ✅ done — register, login, GET /verify (behind protect) all wired + tested
 │   │   └── linkRoutes.js        ✅ done — full REST CRUD wired + verified end-to-end
 │   ├── middleware/
 │   │   ├── protect.js           ✅ done, confirmed working via Postman
 │   │   └── clickTracker.js      🔲 not started (click-tracking middleware)
 │   └── server.js                ✅ done (auth + links routes mounted, Mongo connects before listen)
 └── client/
-    └── 🔲 not started — starting next session (auth pages + AuthContext)
+    ├── src/
+    │   └── context/
+    │       └── AuthContext.jsx  ✅ done — written solo, reviewed, all bugs fixed (see below)
+    └── 🔲 everything else not started — axios setup, React Router, Login/Register pages next
 ```
 
 ## Progress Log
 
-### ✅ Done — Full Auth Layer
+### ✅ Done — Full Auth Layer (backend)
 User model, register/login controllers, protect middleware, authRoutes, server.js.
 
 ### ✅ Done — Link Model (`Link.js`)
@@ -53,30 +56,32 @@ name, link, user ref, clickCount default 0, order required, timestamps.
 ### ✅ Done — Full Link CRUD Layer (`linkController.js`)
 All four routes runtime-tested end-to-end via Postman (createLink, getLinks, updateLink, deleteLink). No known open bugs. Treat as solid, tested ground — no need to re-verify unless something changes in that code.
 
-### ✅ Done — Auth Verification Route (`verifyAuth`) — built this session
-
-**Motive (talked through Socratically this session):** the frontend will store the JWT in `localStorage`. On app load/refresh, the app has *only* a raw token string with zero guarantees — no proof it's still valid, no user info attached. `verifyAuth` is a **status check**, not a login: it sends the stored token to a protected route, and the success/failure of that response tells the frontend whether to treat the user as logged in.
-
+### ✅ Done — Auth Verification Route (`verifyAuth`) — Postman-tested this session
 - Route: `GET /api/auth/verify`, behind `protect`.
-- Correctly reasoned that `protect` already does the real gatekeeping (decode token → find user by id → attach full doc to `req.user`, returning `401` itself on invalid/missing/expired token) — so `verifyAuth` never needs to re-check "is this user logged in," it can just trust `req.user` exists by the time it runs. Caught and removed a redundant `if/else` re-checking that on first pass.
-- Correctly reasoned that `password` is already excluded from `req.user` automatically because the User schema field uses `select: false` — no manual stripping needed in the controller. (Also correctly recalled that `login` has to explicitly override this with `.select('+password')` to compare credentials.)
-- Final controller:
-```js
-export const verifyAuth = async (req, res) => {
-    try {
-        const { name, username, subscription } = req.user;
-        res.status(200).json({ message: "The user is logged in", name, username, subscription })
-    } catch (error) {
-        res.status(400).json({ message: error.message })
-    }
-}
+- Controller destructures `{ name, username, subscription }` from `req.user`, returns `200` with `{ message, name, username, subscription }`.
+- **Postman-tested and confirmed working:** valid token → 200 with correct fields; no token / garbage token → 401 from `protect` itself (`verifyAuth` never runs in that case). No known open bugs.
+
+### ✅ Done — `AuthContext.jsx` (frontend) — built this session
+
+**Built via heavy Socratic back-and-forth, then rewritten solo from scratch as a final check — second attempt was correct with only minor pointed corrections needed.**
+
+Final state/shape:
+```jsx
+const [token, setToken] = useState(localStorage.getItem('token') || null)
+const [user, setUser] = useState(null)
+const [isLoading, setIsLoading] = useState(true)
 ```
-- Noted (not fixed, no rush): `async` isn't doing anything here since there's no `await` in the body — harmless either way, purely a style choice.
-- Route wired into `authRoutes.js`:
-```js
-router.get('/verify', protect, verifyAuth)
-```
-- **Not yet done:** Postman-testing this route (valid token → 200 with correct fields; no token / garbage token → 401 from `protect` itself, confirming `verifyAuth` never even runs in that case).
+
+Full flow reasoned through and internalized:
+- **Why three state variables, not two:** `user: null` is ambiguous on its own — it could mean "confirmed logged out" or "haven't checked yet." `isLoading` disambiguates between those two states so a future `ProtectedRoute` doesn't wrongly redirect a valid logged-in user during the brief window while the verify call is still in flight.
+- **`useEffect` on mount:** if no `token` exists, immediately `setIsLoading(false)` and `return` early — no point calling the API for a token that doesn't exist. (First draft forgot the `return`, caught on review — code fell through to calling `verify()` regardless.)
+- **`verify()` inner async function:** fetches `/api/auth/verify` with `Authorization: Bearer <token>` header (matches `protect`'s `split(' ')[1]` parsing — reasoned through why the raw token alone would break that parse). NOTE: fetch URL is currently `''` (placeholder) — needs real base URL wired in next session via axios.
+- **Response handling:** `await res.json()` (first draft forgot the `await`, caught on review — `res.json()` returns a Promise, not synchronous data). On `res.ok`, `setUser(data)` with the flat `{ message, name, username, subscription }` object (first draft mistakenly tried `data.data`, corrected after re-examining `verifyAuth`'s actual response shape). Either branch (success or failure) always calls `setIsLoading(false)` — the "checking" phase is over regardless of outcome.
+- **`login(token, userData)`:** for explicit form-submit flow, not app-mount flow. Saves token + `JSON.stringify(userData)` to `localStorage`, sets both directly in state — no re-verification needed since this data is freshly trusted from a just-succeeded API call.
+- **`logout()`:** clears `token`/`user` state and their `localStorage` entries.
+- **Custom hook:** `export const useAuth = () => useContext(AuthContext)` — first draft mistakenly wrote `useContext(AuthProvider)` (wrong argument — passed the component instead of the context object) wrapped in `{ }` braces (which discarded the return value entirely, since arrow functions with `{ }` require an explicit `return`). Both caught and fixed on review.
+
+**Full context/Provider/consumer syntax was also re-taught this session** (createContext → Provider component holding state → children prop → custom `useAuth` hook) since it had gone rusty after the break — he found this explanation clarifying.
 
 ### ✅ Done — `linkRoutes.js`
 Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. Confirmed working.
@@ -87,17 +92,19 @@ Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. C
 ### ✅ Done — First End-to-End Test (Postman) — link CRUD layer
 Full flow tested: register → login → grab token → create/get/update/delete links, all via Postman. All four link routes confirmed working end-to-end. No known open bugs.
 
-### 🔲 Immediate Next Steps (session resumes here)
-- **Postman-test `/api/auth/verify`** — hit it with a valid token (expect 200 + name/username/subscription), then with no token and a garbage/expired token (expect 401 from `protect`, confirming `verifyAuth` is never reached).
-- **Start frontend** — React Router setup, `AuthContext`, Login/Register pages, Home page.
-  - Flow agreed: on app load, check `localStorage` for a token, then call `/api/auth/verify` to confirm it's actually still valid (rather than just trusting its presence) — this is exactly what the new route is for.
-  - Still open/undiscussed: exact shape of `AuthContext` (what state/functions it exposes), and where the user lands post-login (dashboard vs. public profile) — flagged as still to decide.
+### 🔲 Immediate Next Steps (session resumes here — picking up "later in the evening")
+- **Set up axios** (or a shared fetch wrapper) with the real backend base URL — `AuthContext.jsx`'s `verify()` fetch call currently has an empty `''` URL placeholder that needs to be filled in. This is the very first thing to fix.
+- **Decide:** axios instance file (e.g. `api.js` with `baseURL` preconfigured) vs. plain `fetch` with a constant — leaning toward axios since "we have to make calls always."
+- **Wire `AuthProvider` into the app** — wrap `<App />` with it in `main.jsx`.
+- **React Router setup** — routes for Login, Register, Home/Dashboard, and a `ProtectedRoute` component that uses `isLoading` + `user` together (not just `user` alone) to decide render-vs-redirect.
+- **Login/Register pages** — forms that call `login(token, userData)` from `AuthContext` on successful API response.
+- Still open/undiscussed: exact landing destination post-login (dashboard vs. public profile) — flagged as still to decide.
 
 ### 🔲 Not Started
 - Click model
 - Click-tracking middleware
 - Razorpay Subscriptions integration (webhooks, subscription status sync)
-- Frontend (React + Tailwind) — dashboard, public profile page, link management UI, AuthContext, Login/Register pages
+- Frontend: axios setup, React Router, Login/Register pages, `ProtectedRoute`, dashboard, public profile page, link management UI
 - Custom themes feature
 - Reorder/drag-and-drop for link `order` (own future endpoint, e.g. `reorderLinks` — not part of `updateLink`)
 - Refactor bcrypt hashing from route-level → `pre('save')` Mongoose hook (deliberately deferred)
@@ -112,13 +119,19 @@ Full flow tested: register → login → grab token → create/get/update/delete
 - **List endpoint response shape:** always wrap arrays in a named key, e.g. `{ links: [...] }`, not a bare array — leaves room to add metadata (counts, pagination) later.
 - **Partial update pattern:** guard each optional field assignment with `if (field) {...}` rather than unconditionally overwriting, to avoid `undefined` overwrites failing schema validation.
 - **Auth verification on app load:** a token's mere presence in `localStorage` doesn't prove it's valid. Correct pattern is to send it to a protected backend route on app mount and use that response's success/failure to decide auth state.
-- **Middleware trust boundary (new this session):** once a request passes through `protect`, downstream controllers can trust `req.user` is a valid, existing user — no need to re-check "is logged in" logic inside the controller itself. Re-checking it is dead code and can even produce a misleading status code if it were ever wrong.
-- **Schema-level field exclusion (new this session):** `select: false` on a schema field (used on `password`) means it's excluded from all queries by default, including ones inside middleware like `protect` — no manual `delete user.password` or destructuring-to-omit needed downstream. To get it back when actually needed (e.g. comparing during login), you must explicitly `.select('+password')` on that specific query.
+- **Middleware trust boundary:** once a request passes through `protect`, downstream controllers can trust `req.user` is a valid, existing user — no need to re-check "is logged in" logic inside the controller itself.
+- **Schema-level field exclusion:** `select: false` on a schema field (used on `password`) means it's excluded from all queries by default, including ones inside middleware like `protect` — no manual `delete user.password` needed downstream. To get it back (e.g. comparing during login), must explicitly `.select('+password')` on that query.
+- **Three-state auth pattern (new this session):** `user` + `token` + `isLoading` as separate state variables — `isLoading` exists specifically to disambiguate "confirmed not logged in" from "haven't checked yet," which a two-variable (`user`/`token` only) design cannot express. `ProtectedRoute` and similar consumers must check `isLoading` before trusting `user`'s null/non-null value.
+- **`login()` vs. mount-time `verify()` (new this session):** `login()` runs on explicit user action with freshly-trusted server data — no re-verification needed, state is set directly. The mount-time `useEffect` verify exists specifically because a token surviving in `localStorage` from a previous session is "unknown until proven" — its mere presence doesn't guarantee validity.
+- **`res.json()` is async (new this session):** returns a Promise, must be `await`-ed — easy to forget since the naming doesn't hint at it.
+- **Bearer token header format (new this session):** must send `Authorization: Bearer <token>`, matching `protect`'s server-side `split(' ')[1]` parsing — sending the raw token alone breaks that parse.
 
 ## Reminders for Claude
-- Socratic teaching style continues to work very well — he self-corrects almost everything when pointed at the right question. Keep doing this, don't shortcut to giving code.
-- Recurring pattern to watch: over-engineering a condition on first pass (this session: added a redundant `if/else` re-checking auth status that `protect` already guarantees). When this happens, ask him to consider whether the earlier layer (middleware) already handles it before adding new logic.
-- He debugs and reasons well independently when given a pointed question rather than the fix — this session he correctly reasoned through the trust boundary after `protect`, and correctly recalled the `select: false` schema detail from memory without being told.
+- Socratic teaching style continues to work very well — he self-corrects almost everything when pointed at the right question, and increasingly catches conceptual gaps (e.g. the `isLoading` ambiguity problem) once nudged toward the right frame, even when the correct answer isn't immediate.
+- Recurring pattern to watch: over-engineering a condition on first pass (previously: redundant re-checking of auth status that `protect` already guarantees). No new instance of this specific pattern this session — instead, new first-draft bugs were more about *forgetting async/await* and *misnaming variables passed into hooks* (e.g. `useContext(AuthProvider)` instead of `useContext(AuthContext)`). Watch for this "right shape, wrong specific reference" error type going forward.
+- When rusty on syntax after a break, he asks directly for a refresher rather than guessing — respond with a clear, structured explanation (this session: full Context/Provider/consumer pattern) before returning to Socratic mode on the actual bug-hunting.
+- Responds very well to "write it yourself first, then I'll review" — his solo second-draft rewrite of `AuthContext.jsx` was nearly perfect, needing only three small corrections, all of which he found himself once pointed at the right question.
 - **Full link CRUD layer is runtime-verified end-to-end via Postman. Treat as solid, tested ground going forward.**
-- **Auth verify route (`/api/auth/verify`) is built and wired but NOT YET Postman-tested — this is the very first thing to do next session, before moving into frontend.**
-- **Next session starts at:** Postman-testing `/api/auth/verify` (valid token, no token, bad token), then moving into frontend scaffolding (React Router setup, `AuthContext`, Login/Register pages, Home page) with the on-load token verification flow wired in.
+- **Auth verify route (`/api/auth/verify`) is now Postman-tested and confirmed working (valid/no-token/bad-token all correct). Treat as solid, tested ground going forward.**
+- **`AuthContext.jsx` is written, reviewed, and correct — but the `verify()` fetch call has an empty placeholder URL (`fetch('', {...})`) that must be filled in once axios/base URL is set up. Do not treat this file as fully wired until that's fixed.**
+- **Next session starts at:** setting up axios (or a fetch wrapper) with the real backend base URL, wiring `AuthProvider` into `main.jsx`, then React Router setup (Login/Register pages, `ProtectedRoute`, Home/Dashboard) with the on-load token verification flow already built and ready to use.
