@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
             try {
                 const res = await api.get('/auth/verify')
                 setUser(res.data)
+
             } catch (error) {
                 console.log(error.message)
                 setUser(null)
