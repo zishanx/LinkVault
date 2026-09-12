@@ -2,28 +2,29 @@
 
 > Paste this file's content at the start of a new chat to get Claude ("Cosmo") back up to speed instantly.
 
-## ⚠️ Stack Note (per locked roadmap, Sept 2026)
-Per the locked roadmap ("zizzy-the-road-ahead.md"), LinkVault's **frontend is to be built in TypeScript**, not plain JS. `AuthContext.jsx` was already written and fully reviewed in JS this session — it is NOT being thrown away. It's being kept as the **correct, tested reference logic**.
+## ⚠️ Stack Note (UPDATED — Sept 2026)
+Per the locked roadmap, LinkVault's frontend was originally slated for JS-first-then-port-per-piece. **This has been revised.** Decision made this session:
 
-### Workflow (adopted this session): JS-first, then port to TS
-For every new frontend piece from here on: **write the logic in JS first, get it working, then immediately port it to TS** in the same session. Rationale — this separates two hard problems instead of stacking them: JS pass = "does the logic work," TS pass = "what are the shapes here." Only the frontend uses this pattern (backend stays JS per the roadmap).
-- Applies to: axios setup, React Router pages, `ProtectedRoute`, Login/Register, dashboard, etc.
-- Port immediately after the JS version works, not later — waiting turns porting into "re-understand old code" instead of "add types to code I just reasoned through."
-- **This is training wheels, not permanent.** After ~3-4 rounds of this (AuthContext, axios, maybe one more component), start typing as you write instead of after. Re-evaluate whether the JS-first step is still needed once type-thinking starts happening naturally.
-- Current status: `AuthContext.jsx` is round 1 (JS done, TS port next). Axios setup will be round 2.
+### Workflow (current): Full JS build → TS revision (independent, self-paced) → single port pass
+- **Build the entire LinkVault frontend in JS**, no interruptions, stay in flow. No per-piece porting.
+- **TS revision runs separately, on his own pace, outside of LinkVault build time.**
+- **Port the whole frontend to TS once, at the end**, after TS revision is done — by then he's applying internalized concepts instead of learning and translating at the same time.
+- Rationale: the old per-piece workflow caused context-switching between "what does LinkVault need next" (build-mode) and "what does TS's type system want here" (learn-mode) — this is what caused the stall on `createContext` generics. Separating the two problems fully (build now, port later) removes that friction.
+- `AuthContext.jsx` (round 1 of the old workflow) stays as-is in JS — correct, tested, reviewed logic. It will be ported along with everything else in the final port pass, not before.
+- **No more per-piece TS porting until the full JS frontend is built and TS revision is complete.**
 
-All frontend work from here forward — Router, ProtectedRoute, Login/Register, dashboard — ends up in `.tsx`/`.ts`, even if drafted in `.jsx`/`.js` first.
+All frontend work from here forward — axios, Router, ProtectedRoute, Login/Register, dashboard, link management UI, public profile — stays in `.js`/`.jsx` until the single end-of-build port phase.
 
 ## What LinkVault Is
 A subscription-gated link-in-bio + analytics tool (like Linktree, but with paid tiers).
 - **Free tier:** up to 5 links
 - **Paid tier (via Razorpay Subscriptions):** unlimited links, click analytics, custom themes
 - Public profile page at `linkvault.com/:username`
-- Purpose: revision vehicle for MERN concepts (post-2-month break) + learning Razorpay Subscriptions API + webhooks + **TypeScript on the frontend**
+- Purpose: revision vehicle for MERN concepts (post-2-month break) + learning Razorpay Subscriptions API + webhooks + TypeScript (via separate revision track, ported into this project at the end)
 
 ## Stack
-- **Frontend:** React (Vite), **TypeScript**, Tailwind
-- **Backend:** Node.js, Express (JS — no TS migration planned for backend at this stage)
+- **Frontend (for now):** React (Vite), JavaScript, Tailwind — will be ported to TypeScript in a single pass once TS revision is complete
+- **Backend:** Node.js, Express (JS — no TS migration planned for backend at any stage)
 - **DB:** MongoDB (Mongoose)
 - **Auth:** JWT
 - **Payments:** Razorpay Subscriptions API (not yet learned/integrated)
@@ -50,18 +51,16 @@ linkvault/
 │   │   ├── protect.js           ✅ done, confirmed working via Postman
 │   │   └── clickTracker.js      🔲 not started (click-tracking middleware)
 │   └── server.js                ✅ done (auth + links routes mounted, Mongo connects before listen)
-└── client/
-    ├── vite.config / tsconfig   🔲 not started — need to (re)init client as a TS Vite project (or add TS support if not already scaffolded as TS)
+└── client/ (JS/JSX for now — will be ported to TS in one pass at the end)
     ├── src/
     │   └── context/
-    │       ├── AuthContext.jsx  ✅ done in JS — logic fully correct, reviewed, all bugs fixed (see below)
-    │       └── AuthContext.tsx  🔲 NEXT — port the JS version above into typed TS
-    └── 🔲 everything else not started — axios setup, React Router, Login/Register pages next (all in .tsx)
+    │       └── AuthContext.jsx  ✅ done in JS — logic fully correct, reviewed, all bugs fixed (see below)
+    └── 🔲 everything else not started — axios setup, React Router, Login/Register pages next (all in .jsx)
 ```
 
 ## Progress Log
 
-### ✅ Done — Full Auth Layer (backend, JS — unaffected by TS migration)
+### ✅ Done — Full Auth Layer (backend, JS — permanent, no TS migration planned)
 User model, register/login controllers, protect middleware, authRoutes, server.js.
 
 ### ✅ Done — Link Model (`Link.js`)
@@ -85,7 +84,7 @@ const [user, setUser] = useState(null)
 const [isLoading, setIsLoading] = useState(true)
 ```
 
-Full flow reasoned through and internalized (this reasoning carries over 1:1 into the TS port — only the type annotations are new work):
+Full flow reasoned through and internalized (this reasoning carries over 1:1 into the eventual TS port — only type annotations will be new work):
 - **Why three state variables, not two:** `user: null` is ambiguous on its own — it could mean "confirmed logged out" or "haven't checked yet." `isLoading` disambiguates between those two states so a future `ProtectedRoute` doesn't wrongly redirect a valid logged-in user during the brief window while the verify call is still in flight.
 - **`useEffect` on mount:** if no `token` exists, immediately `setIsLoading(false)` and `return` early — no point calling the API for a token that doesn't exist.
 - **`verify()` inner async function:** fetches `/api/auth/verify` with `Authorization: Bearer <token>` header (matches `protect`'s `split(' ')[1]` parsing). NOTE: fetch URL is currently `''` (placeholder) — needs real base URL wired in via axios.
@@ -96,14 +95,6 @@ Full flow reasoned through and internalized (this reasoning carries over 1:1 int
 
 **Full context/Provider/consumer syntax was also re-taught this session** (createContext → Provider component holding state → children prop → custom `useAuth` hook).
 
-### 🔲 NEXT — Port `AuthContext.jsx` → `AuthContext.tsx`
-This is now the first frontend task, ahead of axios setup. What it involves (to reason through Socratically, not just hand over):
-- Define a `User` type/interface matching the `verifyAuth` response shape: `{ message: string; name: string; username: string; subscription: 'Free' | 'Premium' }` (or split `message` out if it's only relevant on the wire, not in stored state — worth deciding deliberately).
-- Type the three state hooks: `useState<string | null>`, `useState<User | null>`, `useState<boolean>`.
-- Define the shape of the context value itself (a `AuthContextType` interface: `token`, `user`, `isLoading`, `login`, `logout`) and type `createContext<AuthContextType | undefined>(undefined)` — this reintroduces the classic "context can be undefined outside a Provider" TS problem, which `useAuth()` should guard against (throw if `undefined`, so consumers get a non-null type back).
-- Type `login`'s parameters (`token: string`, `userData: User`).
-- Children prop typing: `{ children: React.ReactNode }`.
-
 ### ✅ Done — `linkRoutes.js`
 Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. Confirmed working.
 
@@ -113,20 +104,25 @@ Clean REST convention (`GET/POST /`, `PUT/DELETE /:id`), all behind `protect`. C
 ### ✅ Done — First End-to-End Test (Postman) — link CRUD layer
 Full flow tested: register → login → grab token → create/get/update/delete links, all via Postman. All four link routes confirmed working end-to-end. No known open bugs.
 
-### 🔲 Immediate Next Steps (in order)
-1. **Port `AuthContext.jsx` → `AuthContext.tsx`** (see above) — do this before anything else touches the frontend.
-2. **Confirm/set up client as a TS Vite project** — if the client was scaffolded as JS, this may need `tsconfig.json` + renaming existing files, or a fresh `npm create vite@latest -- --template react-ts` if starting the client folder over is cleaner than retrofitting.
-3. **Set up axios** with the real backend base URL — `verify()`'s fetch call currently has an empty `''` URL placeholder. Decide axios instance file (`api.ts` with `baseURL`) vs. plain `fetch` with a constant — leaning axios.
-4. **Wire `AuthProvider` into the app** — wrap `<App />` with it in `main.tsx`.
-5. **React Router setup** (`.tsx`) — routes for Login, Register, Home/Dashboard, and a `ProtectedRoute` component typed to accept `children: React.ReactNode`, using `isLoading` + `user` together (not just `user` alone) to decide render-vs-redirect.
-6. **Login/Register pages** (`.tsx`) — forms that call `login(token, userData)` from `AuthContext` on successful API response.
+### 🔲 Immediate Next Steps (in order — all JS/JSX)
+1. **Set up axios** with the real backend base URL — `AuthContext.jsx`'s `verify()` fetch call currently has an empty `''` URL placeholder. Decide axios instance file (`api.js` with `baseURL`) vs. plain `fetch` with a constant — leaning axios.
+2. **Wire `AuthProvider` into the app** — wrap `<App />` with it in `main.jsx`.
+3. **React Router setup** (`.jsx`) — routes for Login, Register, Home/Dashboard, and a `ProtectedRoute` component using `isLoading` + `user` together (not just `user` alone) to decide render-vs-redirect.
+4. **Login/Register pages** (`.jsx`) — forms that call `login(token, userData)` from `AuthContext` on successful API response.
+5. **Dashboard / link management UI** — CRUD UI against the already-verified backend link routes.
+6. **Public profile page** (`/:username`).
 - Still open/undiscussed: exact landing destination post-login (dashboard vs. public profile) — flagged as still to decide.
+
+### 🔲 Deferred to end-of-build TS port phase
+- Full frontend port to `.tsx`/`.ts` (all files built in this JS phase)
+- Types for `User`, `AuthContextType`, `useAuth` undefined-guard, etc. — same plan as before, just deferred
+- Confirm/set up client as TS Vite project (or retrofit) at that point, not now
 
 ### 🔲 Not Started
 - Click model
 - Click-tracking middleware
 - Razorpay Subscriptions integration (webhooks, subscription status sync)
-- Frontend (all `.tsx`): axios setup, React Router, Login/Register pages, `ProtectedRoute`, dashboard, public profile page, link management UI
+- Frontend (JS for now): axios setup, React Router, Login/Register pages, `ProtectedRoute`, dashboard, public profile page, link management UI
 - Custom themes feature
 - Reorder/drag-and-drop for link `order` (own future endpoint, e.g. `reorderLinks` — not part of `updateLink`)
 - Refactor bcrypt hashing from route-level → `pre('save')` Mongoose hook (deliberately deferred)
@@ -147,7 +143,7 @@ Full flow tested: register → login → grab token → create/get/update/delete
 - **`login()` vs. mount-time `verify()`:** `login()` runs on explicit user action with freshly-trusted server data — no re-verification needed. Mount-time `useEffect` verify exists because a token surviving in `localStorage` is "unknown until proven."
 - **`res.json()` is async:** returns a Promise, must be `await`-ed.
 - **Bearer token header format:** must send `Authorization: Bearer <token>`, matching `protect`'s server-side `split(' ')[1]` parsing.
-- **TS migration rationale (new):** locked roadmap specifies LinkVault frontend in TypeScript. JS `AuthContext.jsx` logic is correct and stays as the reference — the port to `.tsx` is purely about adding type safety on top of already-validated logic, not re-solving the auth flow from scratch.
+- **Workflow revision (Sept 2026, this session):** dropped per-piece JS-then-port workflow in favor of full JS build now, TS revision separately/self-paced, single port pass at the end. Reason: per-piece porting was forcing simultaneous build-mode and learn-mode context-switching, which is what caused the `createContext` generics stall.
 
 ## Reminders for Claude
 - Socratic teaching style continues to work very well — he self-corrects almost everything when pointed at the right question.
@@ -156,5 +152,6 @@ Full flow tested: register → login → grab token → create/get/update/delete
 - Responds very well to "write it yourself first, then I'll review."
 - **Full link CRUD layer is runtime-verified end-to-end via Postman. Treat as solid, tested ground.**
 - **Auth verify route (`/api/auth/verify`) is Postman-tested and confirmed working. Treat as solid, tested ground.**
-- **`AuthContext.jsx` logic is correct and reviewed — but it is JS, and the locked roadmap requires the frontend in TS.** Adopted workflow: draft each new frontend piece in JS first, then port to TS in the same session (see workflow note at top). Do not leave a `.jsx` file un-ported before moving to the next piece.
-- **Next session starts at:** porting `AuthContext.jsx` → `AuthContext.tsx` (types for User, context value, useAuth guard) — this is round 1 of the JS-first-then-port workflow. Then draft axios in `.js` (round 2), port to `.ts`, then `AuthProvider` wiring into `main.tsx`, then React Router (Login/Register, `ProtectedRoute`, Home/Dashboard) using the same draft-then-port rhythm until it's no longer needed.
+- **`AuthContext.jsx` logic is correct and reviewed. It stays in JS for now** — do NOT prompt for a TS port until the full frontend is built and his separate TS revision track is complete.
+- **Do not reintroduce per-piece JS-then-port workflow.** Current plan is: build full frontend in JS → finish TS revision independently → port entire frontend to TS in one pass.
+- **Next session starts at:** axios setup (`.js`) with real backend base URL, then `AuthProvider` wiring into `main.jsx`, then React Router (Login/Register, `ProtectedRoute`, Home/Dashboard) — all in JS.
