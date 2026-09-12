@@ -2,6 +2,10 @@
 
 import { useState, useContext, createContext, useEffect } from "react";
 
+// We will import the api from axios now.
+import api from "../api/axios";
+
+
 // We will now create the context.
 
 const AuthContext = createContext()
@@ -25,16 +29,14 @@ export const AuthProvider = ({ children }) => {
 
         const verify = async () => {
 
-            const res = await fetch('', {
-                method: "GET",
-                headers: { "authorization": `Bearer ${token}`, 'Content-type': "application/json" }
-            })
 
-            if (res.ok === true) {
-                const data = await res.json()
-                setIsLoading(false)
-                setUser(data)
-            } else {
+            try {
+                const res = await api.get('/auth/verify')
+                setUser(res.data)
+            } catch (error) {
+                console.log(error.message)
+                setUser(null)
+            } finally {
                 setIsLoading(false)
             }
         }
