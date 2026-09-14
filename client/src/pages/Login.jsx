@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios.js'
 import { Link } from "react-router-dom";
-
+import social from '../assets/social.svg';
+import formVid from '../assets/formVid.mp4';
+import blob from '../assets/blob.svg'
 
 
 
@@ -45,11 +47,11 @@ export default function Login() {
 
     return (
         <div className="flex justify-center items-center h-screen bg-background font-body ">
-            <div className=" flex h-[80vh] w-[80vw] overflow-hidden rounded-md shadow-2xl ">
+            <div className=" flex h-[80vh] w-[80vw] overflow-hidden rounded-md shadow-2xl bg-white">
 
 
 
-                <div className="w-4/6 p-5 bg-white flex flex-col gap-4 items-center justify-center">
+                <div className="w-4/6 p-5 bg-white flex flex-col gap-4 items-center justify-center hidden">
 
                     <h1 className="font-bold text-3xl text-start w-full px-4 font-heading text-primary" >Hello,<br /> Welcome back</h1>
                     <form
@@ -91,9 +93,19 @@ export default function Login() {
                         <p className="mt-2 text-gray-600 text-sm">Don't have an account click here.<Link to='/register' className="font-bold"> Sign Up</Link> </p>
                     </form>
                 </div>
-                <div className="w-2/6 bg-primary flex flex-col gap-4 items-center justify-center font-heading">
-                   
+                <div className="w-2/6 bg-primary flex flex-col gap-4 items-center justify-center font-heading hidden">
+                
                     <h3 className="font-bold text-white font-heading text-2xl ">Share everything you are, <br></br> with a single link.</h3>
+
+                    <img src={social} alt="social" />
+                </div>
+
+                <div className="w-1/2 relative h-full">
+                    <img src={blob} alt="" className="flex w-full h-full relative top-0 -left-40" />
+                </div>
+
+                <div className="flex items-center object-cover w-max ">
+                    <video src={formVid} autoPlay muted playsInline className="w-full h-full p-5"></video>
                 </div>
             </div>
         </div>
