@@ -19,29 +19,33 @@ export default function Login() {
     const { login } = useAuth()
     const navigate = useNavigate()
 
-    const tm = gsap.timeline({
-        duration: 0.3
-    })
+
 
     useGSAP(() => {
-
+        const tm = gsap.timeline({
+            duration: 0.3
+        })
         tm.from('#text', {
-            opacity: 0
+            opacity: 0,
+            y:20
         })
 
         tm.from('#email', {
-            opacity: 0
-        })
+            opacity: 0,
+            y:15
+        },"-=0.2")
 
         tm.from('#password', {
-            opacity: 0
-        })
+            opacity: 0,
+            y:15
+        },"-=0.2")
 
-        tm.from('#pwd-btn',{
-            opacity:0
-        })
+        tm.from('#pwd-btn', {
+            opacity: 0,
+            y:15
+        },"-=0.2")
 
-        tm.from('#reg-text',{
+        tm.from('#reg-text', {
             opacity: 0
         })
 
