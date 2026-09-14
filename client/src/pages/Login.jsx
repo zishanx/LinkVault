@@ -1,12 +1,13 @@
 // import everything that we are going to need. 
-import { useState ,useRef } from "react";
+import { useState } from "react";
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios.js'
 import { Link } from "react-router-dom";
-import social from '../assets/social.svg';
 import formVid from '../assets/formVid.mp4';
-import blob from '../assets/blob.svg'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
 
 
 
@@ -18,8 +19,33 @@ export default function Login() {
     const { login } = useAuth()
     const navigate = useNavigate()
 
-    const [showForm,setShowForm] = useState(false)
+    const tm = gsap.timeline({
+        duration: 0.3
+    })
 
+    useGSAP(() => {
+
+        tm.from('#text', {
+            opacity: 0
+        })
+
+        tm.from('#email', {
+            opacity: 0
+        })
+
+        tm.from('#password', {
+            opacity: 0
+        })
+
+        tm.from('#pwd-btn',{
+            opacity:0
+        })
+
+        tm.from('#reg-text',{
+            opacity: 0
+        })
+
+    })
 
 
     const handleChange = (e) => {
@@ -46,14 +72,15 @@ export default function Login() {
 
 
     return (
-        <div className="flex justify-center items-center h-screen bg-background font-body ">
+        <div className="flex justify-center items-center h-screen bg-background font-body  ">
+
+
+
             <div className=" flex h-[80vh] w-[80vw] overflow-hidden rounded-md shadow-2xl bg-white">
-
-
 
                 <div className="w-4/6 p-5 bg-white flex flex-col gap-4 items-center justify-center ">
 
-                    <h1 className="font-bold text-3xl text-start w-full px-4 font-heading text-primary" >Hello,<br /> Welcome back</h1>
+                    <h1 id="text" className="font-bold text-3xl text-start w-full px-4 font-heading text-primary" >Hello,<br /> Welcome back</h1>
                     <form
                         onSubmit={handleSubmit}
                         className="flex flex-col gap-4 py-10 px-4 w-full"
@@ -86,14 +113,14 @@ export default function Login() {
                         </div>
 
 
-                        <button className="mt-2 bg-primary text-white rounded-md p-2 px-4 font-bold hover:bg-primary-hover" type="submit" disabled={isLoading}>{isLoading ? ("Signing In...") : "Sign in"}</button>
+                        <button id="pwd-btn" className="mt-2 bg-primary text-white rounded-md p-2 px-4 font-bold hover:bg-primary-hover" type="submit" disabled={isLoading}>{isLoading ? ("Signing In...") : "Sign in"}</button>
 
                         {error ? (<p className="mt-2 text-red-400 font-bold text-sm">{error}</p>) : <></>}
 
-                        <p className="mt-2 text-gray-600 text-sm">Don't have an account click here.<Link to='/register' className="font-bold"> Sign Up</Link> </p>
+                        <p id="reg-text" className="mt-2 text-gray-600 text-sm">Don't have an account click here.<Link to='/register' className="font-bold"> Sign Up</Link> </p>
                     </form>
                 </div>
-                
+
                 <div className="flex items-center object-cover w-max ">
                     <video src={formVid} autoPlay muted playsInline className="w-full h-full p-5"></video>
                 </div>
