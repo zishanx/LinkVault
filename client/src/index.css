@@ -1,1 +1,13 @@
-@import "tailwindcss"
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Nunito:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+    --font-heading: "Space Grotesk", sans-serif;
+    --font-body: "Nunito", sans-serif;
+
+    --color-primary: #4FB8A6;
+    --color-background: #F7F9F9;
+    --color-textmain: #2D3436;
+    --color-muted: #9CA6A5;
+    --color-primary-hover: #3D9E8E;
+}
