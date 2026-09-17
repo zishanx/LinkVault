@@ -113,7 +113,7 @@ export default function Register() {
                                 />
                             </div>
                             {error ? (<p className="mt-2 text-red-400 font-bold text-sm">{error}</p>) : <></>}
-                            <button type="submit" disabled={isLoading || showSucces} className="mt-2 bg-primary text-white rounded-md p-2 px-4 font-bold hover:bg-primary-hover">{showSucces ? "Signing Up" : "Sign Up"}</button>
+                            <button type="submit" disabled={isLoading || showSucces} className="mt-2 bg-primary text-white rounded-md p-2 px-4 font-bold hover:bg-primary-hover">{isLoading?"Signing Up....": showSucces?"Success! Redirecting...": "Sign Up"}</button>
                             <p id="reg-text" className="mt-2 text-gray-600 text-sm">Already an account click here.<Link to='/login' className="font-bold"> Sign In</Link> </p>
                             {message ? (<div>
                                 <p className="text-lg text-primary font-bold ">{message}</p>
