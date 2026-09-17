@@ -7,7 +7,10 @@ const clickSchema = new mongoose.Schema({
         required: true
     },
     country: {
-        type:String,
-        required: true
+        type: String,
     }
 }, { timestamps: true })
+
+const Click = mongoose.model("Click", clickSchema)
+
+export default Click
