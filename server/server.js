@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes.js'
 import linkRoutes from './routes/linkRoutes.js'
+import redirectRoutes from './routes/redirectroute.js'
 import { loadGeoDB } from './utils/geoip.js'
 
 
@@ -14,6 +15,7 @@ app.use(express.json())
 app.use(cors())
 app.use('/api/auth', authRoutes)
 app.use('/api/links', linkRoutes)
+app.use('/r', redirectRoutes)
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => loadGeoDB()).then(() => {
