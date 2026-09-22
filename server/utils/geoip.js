@@ -11,5 +11,3 @@ export const getCountry = (ip) => {
     return result?.country?.iso_code;
 }
 
-
-// Now we will move on to work with the tracker.js
