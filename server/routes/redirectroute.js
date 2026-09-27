@@ -1,5 +1,6 @@
 import express from 'express'
-import { redirect } from '../controllers/redirectController'
+import { redirect } from '../controllers/redirectController.js'
+import { protect } from '../middleware/protect.js'
 
 const router = express.Router()
 

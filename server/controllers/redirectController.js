@@ -1,6 +1,6 @@
-import Click from "../models/Click";
-import Link from '../models/Link'
-import { getCountry } from "../utils/geoip";
+import Click from "../models/Click.js";
+import Link from '../models/Link.js'
+import { getCountry } from "../utils/geoip.js";
 
 export const redirect = async (req, res) => {
 
@@ -18,10 +18,14 @@ export const redirect = async (req, res) => {
             res.status(404).json({ message: "Invalid Link!" })
         }
     } catch (error) {
+        if (error.name === "CastError") {
+
+            console.log(error)
+            return res.status(404).json({ message: "Invalid Link !" })
+        }
+        res.status(500).json({ message: "Something went wrong." })
         console.log(error)
     }
-
-
 
 
 }

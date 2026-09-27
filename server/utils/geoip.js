@@ -3,7 +3,7 @@ import maxmind from 'maxmind';
 let lookup; 
 
 export const loadGeoDB = async () => {
-    lookup = await maxmind.open('./data/GeoLite2-Country.mmd');
+    lookup = await maxmind.open('./data/GeoLite2-Country.mmdb');
 }
 
 export const getCountry = (ip) => {
