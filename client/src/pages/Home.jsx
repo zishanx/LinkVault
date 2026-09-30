@@ -1,9 +1,15 @@
-export default function Home(){
+export default function Home() {
 
 
     return (
         <>
-            <h1>Home</h1>
+            <div id="nav-bar">
+                <h1>LinkVault</h1>
+                <div>
+                    <button>Login</button>
+                    <button>Get Started</button>
+                </div>
+            </div>
         </>
     )
 }
