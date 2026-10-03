@@ -24,16 +24,6 @@ export default function Home() {
         videoRef.current.play()
     }
 
-    const handleMouseEnter = () => {
-        videoRef.current.pause()
-    }
-
-    const handleMouseLeave = () => {
-        videoRef.current.play()
-    }
-
-
-
     useGSAP(() => {
 
 
@@ -83,7 +73,7 @@ export default function Home() {
 
         const cardT1 = gsap.timeline({
             scrollTrigger: {
-                trigger: ".pricing",
+                trigger: ".features",
                 start: "top 25%",
                 toggleActions: "play none none reverse"
             }
@@ -147,13 +137,13 @@ export default function Home() {
                     </div>
                 </div>
                 <div className='flex items-center justify-center md:w-1/2'>
-                    <video src={heroVid} ref={videoRef} autoPlay muted playsInline onEnded={handleVideoEnd} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="w-[80%] h-full  p-2"></video>
+                    <video src={heroVid} ref={videoRef} autoPlay muted playsInline onEnded={handleVideoEnd} className="w-[80%] h-full  p-2"></video>
                 </div>
 
 
             </div>
 
-            <div className="pricing px-4 md:px-10 lg:px-20 mb-10 md:mb-20">
+            <div className="features px-4 md:px-10 lg:px-20 mb-10 md:mb-20">
                 <h2 className='font-bold text-3xl text-center text-primary mb-20'>Features</h2>
 
                 <h3 className='text-3xl md:text-4xl font-heading w-4/5 md:w-1/2 mb-5'>
@@ -165,23 +155,23 @@ export default function Home() {
                 <div className="flex flex-col md:flex-row gap-8 md:gap-20 p-4 md:p-20">
 
 
-                    <div id='cards' className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
-                    flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative hover:bg-mint-deep">
+                    <div  className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
+                    flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative hover:bg-mint-deep ">
                         <img src={unlimited} alt="unlimited image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Unlimited links</h3>
-                        <p className='text-muted'> One page for all your links,with a free tier of 5</p>
+                        <p className='text-muted'> One page for all your links with a free tier of 5</p>
                     </div>
 
-                    <div id='cards' className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
+                    <div  className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
                     flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative bottom-15 hover:bg-mint-deep">
-                        <img src={analytics} alt="unlimited image" className='w-20' />
+                        <img src={analytics} alt="analytics image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Click analytics</h3>
                         <p className='text-muted'>See which links get clicks and which countries they come from.</p>
                     </div>
 
-                    <div id='cards' className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
+                    <div  className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
                     flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative bottom-30 hover:bg-mint-deep">
-                        <img src={theme} alt="unlimited image" className='w-20' />
+                        <img src={theme} alt="themes image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Custom themes</h3>
                         <p className='text-muted'>Make your page look like you.</p>
                     </div>
