@@ -7,6 +7,7 @@ import theme from '../assets/theme.png'
 import analytics from '../assets/analytics.png'
 
 import { useRef } from "react"
+import { Link } from 'react-router-dom'
 
 
 gsap.registerPlugin(ScrollTrigger);
@@ -74,7 +75,7 @@ export default function Home() {
         const cardT1 = gsap.timeline({
             scrollTrigger: {
                 trigger: ".features",
-                start: "top 25%",
+                start: "top 50%",
                 toggleActions: "play none none reverse"
             }
         })
@@ -106,8 +107,8 @@ export default function Home() {
             <div id="nav-bar" className="flex justify-between items-center p-2 backdrop-blur bg-background/70  border-b border-transparent sticky top-0 z-50 h-16 px-4 md:px-20">
                 <h1 className="text-xl font-bold font-heading text-primary text-center">LinkVault</h1>
                 <div className="flex gap-4 font-heading">
-                    <button className="px-4 py-2 rounded-xl font-bold hover:bg-primary-hover hover:text-white border-primary border-2 ">Log in</button>
-                    <button className="px-4 py-2  rounded-xl font-bold hover:bg-primary-hover text-white bg-primary">Get Started</button>
+                    <Link to="/login"><button className="px-4 py-2 rounded-xl font-bold hover:bg-primary-hover hover:text-white border-primary border-2 ">Log in</button></Link>
+                    <Link to="/register"><button className="px-4 py-2  rounded-xl font-bold hover:bg-primary-hover text-white bg-primary">Get Started</button></Link>
                 </div>
             </div>
 
@@ -132,8 +133,8 @@ export default function Home() {
                     </h1>
                     <p id='hero-subheading' className='text-muted font-body text-lg max-w-md'>Share one link, track every click, know where they came from.</p>
                     <div id='hero-btn' className='flex gap-4'>
-                        <button className='bg-primary px-4 py-2 rounded-xl text-white font-bold'>Start for free</button>
-                        <button className='px-4 py-2 rounded-xl border-2 font-bold'>See pricing</button>
+                        <Link to="/login"><button className='bg-primary px-4 py-2 rounded-xl text-white font-bold hover:bg-primary-hover'>Start for free</button></Link>
+                        <button className='px-4 py-2 rounded-xl border-2 font-bold hover:bg-primary-hover hover:text-white'>See pricing</button>
                     </div>
                 </div>
                 <div className='flex items-center justify-center md:w-1/2'>
@@ -155,21 +156,21 @@ export default function Home() {
                 <div className="flex flex-col md:flex-row gap-8 md:gap-20 p-4 md:p-20">
 
 
-                    <div  className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
+                    <div className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
                     flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative hover:bg-mint-deep ">
                         <img src={unlimited} alt="unlimited image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Unlimited links</h3>
                         <p className='text-muted'> One page for all your links with a free tier of 5</p>
                     </div>
 
-                    <div  className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
+                    <div className="feature-card rounded-2xl bg-mint shadow-[0_10px_30px_rgba(79,184,166,0.15)] border-mint-deep  p-10 text-center flex
                     flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative bottom-15 hover:bg-mint-deep">
                         <img src={analytics} alt="analytics image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Click analytics</h3>
                         <p className='text-muted'>See which links get clicks and which countries they come from.</p>
                     </div>
 
-                    <div  className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
+                    <div className="feature-card rounded-2xl bg-mint shadow border-mint-deep  p-10 text-center flex
                     flex-col justify-center items-center gap-5  border-2  w-full md:w-1/3 relative bottom-30 hover:bg-mint-deep">
                         <img src={theme} alt="themes image" className='w-20' />
                         <h3 className='text-2xl font-bold text-black font-heading'>Custom themes</h3>
