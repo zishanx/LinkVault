@@ -181,6 +181,26 @@ export default function Home() {
             </div>
 
 
+            <div className="pricing px-4 md:px-10 lg:px-20 mb-10 md:mb-20">
+
+                <h2 className='font-bold text-3xl text-center text-primary mb-20'>Pricing</h2>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+
+
+                    <h3 className='text-3xl md:text-4xl font-heading w-4/5 md:w-1/2 mb-5'>
+                        Start free.Upgrade when you grow.
+                    </h3>
+
+                    <div className="free bg-mint rounded-md">
+
+                    </div>
+
+                    <div className="pro bg-mint rounded-md">
+
+                    </div>
+                </div>
+            </div>
+
 
         </div>
     )
