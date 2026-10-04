@@ -8,7 +8,13 @@ import analytics from '../assets/analytics.png'
 
 import { useRef } from "react"
 import { Link } from 'react-router-dom'
+import { Check } from 'lucide-react'
 
+const freeFeatures = [
+    "Up to 5 links",
+    "Public profile page",
+    "Simple link dashboard",
+]
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -184,18 +190,38 @@ export default function Home() {
             <div className="pricing px-4 md:px-10 lg:px-20 mb-10 md:mb-20">
 
                 <h2 className='font-bold text-3xl text-center text-primary mb-20'>Pricing</h2>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-200 p-5 rounded-xl'>
 
 
-                    <h3 className='text-3xl md:text-4xl font-heading w-4/5 md:w-1/2 mb-5'>
-                        Start free.Upgrade when you grow.
+                    <h3 className='text-3xl md:text-4xl font-heading w-4/5 md:w-1/2 mb-5 self-center'>
+                        Start free. Upgrade when you grow.
                     </h3>
 
-                    <div className="free bg-mint rounded-md">
+                    <div className="free bg-mint  border-2 border-mint-deep shadow-lg  p-6 md:p-8 flex gap-5 flex-col">
+
+                        <p className='font-heading text-xl text-textmain'>Free</p>
+
+                        <p className='font-heading text-4xl text-textmain'>$0<span className='text-muted text-sm'>/month</span></p>
+
+                        <p className='font-bold text-muted'>Everything you need to get started.</p>
+
+                        <ul className='flex flex-col gap-3'>
+                            {freeFeatures.map((feature) => (
+                                <li key={feature} className='flex items-center gap-3 font-body text-textmain'>
+                                    <Check className='text-primary size-5 shrink-0' /> {feature}
+                                </li>
+                            ))}
+                        </ul>
 
                     </div>
 
-                    <div className="pro bg-mint rounded-md">
+                    <div className="pro bg-mint-deep border-2 border-primary md:p-8 flex gap-5 flex-col shadow-lg transition hover:-translate-y-1 md:col-span-2">
+
+                        <p className='font-heading text-xl text-textmain bg-primary text-white font-bold rounded-full px-5 py-1 w-max'>Pro</p>
+
+                        <p className='font-heading text-4xl text-primary'>$10<span className='text-muted text-sm'>/month</span></p>
+
+                        <p className='font-bold text-muted'>For people who want to know what their links are doing.</p>
 
                     </div>
                 </div>
