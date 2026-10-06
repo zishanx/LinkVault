@@ -228,6 +228,12 @@ export default function Home() {
             </div>
 
 
+            <div>
+                We will have a footer here . 
+            </div>
+
+
+
         </div>
     )
 }
